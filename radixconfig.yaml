@@ -1,0 +1,42 @@
+apiVersion: radix.equinor.com/v1
+kind: RadixApplication
+metadata:
+  name: edc2024-radix-wi-<Equinor User Name>
+spec:
+  build:
+    useBuildKit: true
+  environments:
+    - name: dev
+      build:
+        from: main
+      # subPipeline:
+      #   variables:
+      #     DB_SERVER_NAME: <insert server name here>
+      #     GIT_REPO: <insert ssh url to git repo here>
+      #   identity:
+      #     azure:
+      #       clientId: <clientId>
+  components:
+    - name: web
+      src: /src/web
+      # identity:
+      #   azure:
+      #     clientId: <clientId>
+      ports:
+        - name: http
+          port: 5000
+      publicPort: http
+      resources:
+        request:
+          cpu: 100Mi
+          memory: 100M
+      variables:
+        ASPNETCORE_URLS: http://*:5000
+        DB_CONNECTION_STRING: "Server=<insert name here>; Database=moviedb; Authentication=Active Directory Workload Identity; Encrypt=True"
+      # secretRefs:
+      #   azureKeyVaults:
+      #     - name: <Key Vault Name>
+      #       useAzureIdentity: true
+      #       items:
+      #         - name: db-connection-string
+      #           envVar: DB_CONNECTION_STRING

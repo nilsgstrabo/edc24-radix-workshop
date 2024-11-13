@@ -1,0 +1,21 @@
+apiVersion: tekton.dev/v1
+kind: Pipeline
+metadata:
+  name: deploy-pipeline
+spec:
+  params:
+    - name: DB_SERVER_NAME
+    - name: GIT_REPO
+  tasks:
+    - name: deploy-db
+      params:
+        - name: DB_SERVER_NAME
+          value:
+            type: string
+            stringVal: $(params.DB_SERVER_NAME)
+        - name: GIT_REPO
+          value:
+            type: string
+            stringVal: $(params.GIT_REPO)
+      taskRef:
+        name: deploy-db

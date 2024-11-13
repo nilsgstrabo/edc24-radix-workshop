@@ -1,0 +1,39 @@
+﻿@page
+@using Models
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center" >
+    <h1 class="display-4">Movies</h1>
+</div>
+
+@if(Model.Movies.Count() == 0) {
+    <div class="text-center alert alert-primary" role="alert">
+        Sorry, no movies found ¯\_(ツ)_/¯
+    </div>
+} else {
+    <table class="table">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Released</th>
+                <th scope="col">Rating</th>
+            </tr>
+        </thead>
+        <tbody>
+        @foreach(Movie movie in Model.Movies) {
+            <tr>
+                <td>@movie.Title</td>
+                <td>@movie.Released?.ToString("MMM d, yyyy")</td>
+                <td>@movie.Rating?.ToString("#.#")</td>
+            </tr>
+        }
+        </tbody>
+    </table>
+}
+
+@* <div class="text-center mt-5">
+    <video controls src="/api/stream" width="800px" autoplay>Your browser does not support the video tag.</video>
+</div> *@

@@ -1,0 +1,61 @@
+apiVersion: tekton.dev/v1
+kind: Task
+metadata:
+  name: deploy-db
+  labels:
+    azure.workload.identity/use: "true"
+  annotations:
+    azure.workload.identity/skip-containers: clone
+spec:
+  params:
+    - name: DB_SERVER_NAME
+    - name: AZURE_CLIENT_ID
+    - name: GIT_REPO
+  steps:
+    - name: clone
+      image: alpine/git
+      securityContext:
+        runAsUser: 65534
+      volumeMounts:
+        - name: $(radix.git-deploy-key) # <-- This volume is created by Radix and available where you mount it.
+          mountPath: /.ssh
+        - name: sourcecode
+          mountPath: /workspace
+      env:
+        - name: GIT_REPO
+          value: $(params.GIT_REPO)
+      args:
+        - clone
+        - $(GIT_REPO)
+        - /workspace
+    - name: deploy-db
+      image: alpine:3
+      securityContext:
+        runAsUser: 1000
+      volumeMounts:
+        - name: sourcecode
+          mountPath: /workspace
+      env:
+        - name: AZURE_CLIENT_ID
+          value: $(params.AZURE_CLIENT_ID)
+        - name: DB_SERVER_NAME
+          value: $(params.DB_SERVER_NAME)
+      script: |
+        #!/bin/sh
+        set -e -u -o pipefail
+
+        # Download sqlcmd tool
+        wget --quiet -O /tmp/sqlcmd.tar.bz2 https://github.com/microsoft/go-sqlcmd/releases/download/v1.8.0/sqlcmd-linux-amd64.tar.bz2
+        tar --directory=/tmp -xjf /tmp/sqlcmd.tar.bz2 sqlcmd
+
+        /tmp/sqlcmd \
+          --server ${DB_SERVER_NAME} \
+          --database-name moviedb \
+          --authentication-method ActiveDirectoryDefault \
+          --exit-on-error \
+          --input-file /workspace/sql/1-schema.sql \
+          --input-file /workspace/sql/2-sample-data.sql \
+          --input-file /workspace/sql/3-access.sql
+  volumes:
+    - name: sourcecode
+      emptyDir: {}
